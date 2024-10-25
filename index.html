@@ -5,10 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escáner de Código QR</title>
     <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
         video {
             width: 100%;
             max-width: 600px;
             border: 1px solid black;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #debug {
+            margin-top: 10px;
+            color: gray;
         }
     </style>
 </head>
@@ -16,19 +30,32 @@
     <h1>Escáner de Código QR</h1>
     <video id="video" playsinline autoplay></video>
     <p id="result">Escanee un código QR</p>
+    <p id="debug"></p>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const resultElement = document.getElementById('result');
+        const debugElement = document.getElementById('debug');
 
         // Acceder a la cámara
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true); // Necesario para iOS
-                video.play();
-                requestAnimationFrame(tick);
-            });
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment', 
+                width: { ideal: 1280 }, 
+                height: { ideal: 720 } 
+            } 
+        })
+        .then(stream => {
+            video.srcObject = stream;
+            video.setAttribute('playsinline', true); // Necesario para iOS
+            video.play();
+            requestAnimationFrame(tick);
+            debugElement.textContent = "Cámara accedida con éxito.";
+        })
+        .catch(err => {
+            console.error("Error al acceder a la cámara: ", err);
+            debugElement.textContent = "Error al acceder a la cámara. Asegúrate de permitir el acceso a la cámara.";
+        });
 
         function tick() {
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -37,16 +64,27 @@
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+                
+                try {
+                    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                    const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
-                if (code) {
-                    resultElement.textContent = `Código QR: ${code.data}`;
-                } else {
-                    resultElement.textContent = 'Escanee un código QR';
+                    if (code) {
+                        resultElement.textContent = `Código QR: ${code.data}`;
+                        debugElement.textContent = "Código QR detectado exitosamente.";
+                        console.log("Código QR leído: ", code.data);
+                    } else {
+                        resultElement.textContent = 'Escanee un código QR';
+                        debugElement.textContent = "No se detectó ningún código QR.";
+                    }
+                } catch (error) {
+                    console.error("Error al procesar el video: ", error);
+                    debugElement.textContent = "Error al procesar el video.";
                 }
+            } else {
+                debugElement.textContent = "Esperando datos del video...";
             }
-            requestAnimationFrame(tick);
+            setTimeout(tick, 100); // Intervalo de escaneo
         }
     </script>
 </body>
