@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escáner de Código QR y Redirección</title>
     <style>
-        /* Estilos de la página */
         body {
             display: flex;
             flex-direction: column;
@@ -19,13 +18,11 @@
             color: #e0e0e0;
         }
         
-        /* Título principal */
         h1 {
             color: #ffffff;
             margin-bottom: 20px;
         }
 
-        /* Estilos del video */
         video {
             width: 100%;
             max-width: 340px;
@@ -35,7 +32,6 @@
             position: relative;
         }
         
-        /* Líneas guía para alineación */
         video::before,
         video::after {
             content: '';
@@ -49,7 +45,6 @@
             box-sizing: border-box;
         }
 
-        /* Resultados y mensajes */
         #result, #debug {
             margin-top: 20px;
             font-weight: bold;
@@ -60,7 +55,6 @@
             font-size: 14px;
         }
 
-        /* Botón de nuevo escaneo */
         #newScanButton {
             margin-top: 20px;
             width: 140px;
@@ -73,10 +67,9 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
-            display: none; /* Oculto al inicio */
+            display: none;
         }
 
-        /* Efecto de botón al pasar el cursor */
         #newScanButton:hover {
             background-color: #45a049;
         }
@@ -98,14 +91,13 @@
         
         let isScanning = true;
 
-        // Acceder a la cámara
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
             video.srcObject = stream;
             video.setAttribute('playsinline', true);
             video.play();
             requestAnimationFrame(tick);
-            debugElement.textContent = "Cámara activada, lista para escanear.";
+            debugElement.textContent = "Cámara activada. Alinee el código QR en el área de escaneo.";
         })
         .catch(err => {
             console.error("Error al acceder a la cámara: ", err);
@@ -124,33 +116,32 @@
                 const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
                 if (code) {
-                    resultElement.textContent = `Código QR detectado`;
-                    debugElement.textContent = "Procesando escaneo...";
+                    resultElement.textContent = "Código QR detectado. Procesando...";
+                    debugElement.textContent = "Enviando datos al servidor, espere un momento...";
 
-                    // Enviar la URL sin redireccionar
                     fetch(code.data)
                         .then(() => {
-                            debugElement.textContent = "Datos enviados exitosamente.";
+                            debugElement.textContent = "Datos enviados con éxito. Escaneo completo.";
+                            resultElement.textContent = "Código escaneado correctamente.";
                         })
                         .catch(() => {
-                            debugElement.textContent = "Error al enviar datos. Verifica la conexión.";
+                            debugElement.textContent = "Error al enviar datos. Intente nuevamente.";
                         });
 
                     isScanning = false;
-                    newScanButton.style.display = 'block'; // Mostrar botón de nuevo escaneo
+                    newScanButton.style.display = 'block';
                 } else {
-                    resultElement.textContent = 'Escanee un código QR';
+                    resultElement.textContent = "Alinee el QR en el área de escaneo";
                 }
             } 
             requestAnimationFrame(tick);
         }
 
-        // Botón para reactivar el escaneo
         newScanButton.addEventListener('click', () => {
             isScanning = true;
             newScanButton.style.display = 'none';
-            resultElement.textContent = 'Escanee un código QR';
-            debugElement.textContent = 'Escaneo reiniciado. Alinee el código QR en el área de la cámara.';
+            resultElement.textContent = "Escanee un código QR";
+            debugElement.textContent = "Escaneo reiniciado. Alinee el código QR en el área de la cámara.";
         });
     </script>
 </body>
