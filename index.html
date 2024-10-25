@@ -15,6 +15,7 @@
             height: 100vh;
             justify-content: center;
             background-color: #f0f0f0;
+            position: relative; /* Para que el botón se posicione correctamente */
         }
         video {
             width: 100%;
@@ -32,19 +33,19 @@
         }
         #newScanButton {
             position: absolute;
-            bottom: 50px;
-            width: 60px;
-            height: 60px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Centra el botón */
+            width: 120px;
+            height: 40px;
             background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 50%;
-            font-size: 14px;
+            border-radius: 5px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
+            display: none; /* El botón está oculto al principio */
         }
     </style>
 </head>
@@ -53,7 +54,7 @@
     <video id="video" playsinline autoplay></video>
     <p id="result">Escanee un código QR</p>
     <p id="debug"></p>
-    <button id="newScanButton">↺</button>
+    <button id="newScanButton">Nuevo Escaneo</button> <!-- Botón para reactivar el escaneo -->
     <script src="./jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
@@ -63,6 +64,7 @@
         
         let isScanning = true;
 
+        // Acceder a la cámara
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
             video.srcObject = stream;
@@ -90,19 +92,18 @@
                 if (code) {
                     resultElement.textContent = `Código QR detectado`;
                     debugElement.textContent = "Enviando datos en segundo plano...";
-                    
+
                     // Enviar la URL sin redireccionar
                     fetch(code.data)
                         .then(() => {
                             debugElement.textContent = "Datos enviados correctamente.";
                         })
-                        .catch(error => {
-                            debugElement.textContent = "Error al enviar datos.";
-                            console.error("Error en el envío: ", error);
+                        .catch(() => {
+                            debugElement.textContent = "Se envió la solicitud, pero hubo un problema en la respuesta.";
                         });
 
                     isScanning = false;
-                    newScanButton.style.display = 'flex';
+                    newScanButton.style.display = 'block'; // Mostrar el botón de nuevo escaneo
                 } else {
                     resultElement.textContent = 'Escanee un código QR';
                 }
@@ -110,9 +111,10 @@
             requestAnimationFrame(tick);
         }
 
+        // Evento de clic en el botón para reactivar el escaneo
         newScanButton.addEventListener('click', () => {
             isScanning = true;
-            newScanButton.style.display = 'none';
+            newScanButton.style.display = 'none'; // Ocultar el botón
             resultElement.textContent = 'Escanee un código QR';
             debugElement.textContent = 'Escaneo reactivado. Alinee el QR en el área de la cámara.';
         });
