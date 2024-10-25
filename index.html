@@ -3,62 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escáner de Códigos QR</title>
-    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <title>Escáner de Código QR</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
-        }
-        #reader {
-            width: 300px;
-            height: 300px;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
+        video {
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid black;
         }
     </style>
 </head>
 <body>
-    <h1>Escáner de Códigos QR</h1>
-    <div id="reader"></div>
-    <button id="start-button">Iniciar Escaneo</button>
-    <div id="result"></div>
-
+    <h1>Escáner de Código QR</h1>
+    <video id="video" playsinline autoplay></video>
+    <p id="result">Escanee un código QR</p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
     <script>
-        const html5QrCode = new Html5Qrcode("reader");
+        const video = document.getElementById('video');
+        const resultElement = document.getElementById('result');
 
-        document.getElementById("start-button").addEventListener("click", function() {
-            html5QrCode.start(
-                { facingMode: "environment" }, // Usar la cámara trasera
-                {
-                    fps: 10,
-                    qrbox: 250 // Tamaño del área de escaneo
-                },
-                (decodedText, decodedResult) => {
-                    // Cuando se escanea un código QR
-                    console.log(`Código QR escaneado: ${decodedText}`);
-                    // Mostrar el resultado en la página
-                    document.getElementById("result").innerText = `Escaneado: ${decodedText}`;
-                    // Redirigir a la URL del código QR
-                    window.location.href = decodedText;
-                },
-                (errorMessage) => {
-                    // Error en el escaneo
-                    console.error("Error de escaneo", errorMessage);
-                }
-            ).catch(err => {
-                console.error("Error al iniciar el escáner", err);
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // Necesario para iOS
+                video.play();
+                requestAnimationFrame(tick);
             });
-        });
+
+        function tick() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvasElement = document.createElement('canvas');
+                const canvas = canvasElement.getContext('2d');
+                canvasElement.height = video.videoHeight;
+                canvasElement.width = video.videoWidth;
+                canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+
+                if (code) {
+                    resultElement.textContent = `Código QR: ${code.data}`;
+                } else {
+                    resultElement.textContent = 'Escanee un código QR';
+                }
+            }
+            requestAnimationFrame(tick);
+        }
     </script>
 </body>
 </html>
