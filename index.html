@@ -41,8 +41,8 @@
         navigator.mediaDevices.getUserMedia({ 
             video: { 
                 facingMode: 'environment', 
-                width: { ideal: 1280 }, 
-                height: { ideal: 720 } 
+                width: { ideal: 640 }, 
+                height: { ideal: 480 } 
             } 
         })
         .then(stream => {
@@ -75,11 +75,11 @@
                         console.log("Código QR leído: ", code.data);
                     } else {
                         resultElement.textContent = 'Escanee un código QR';
-                        debugElement.textContent = "No se detectó ningún código QR.";
+                        debugElement.textContent = "No se detectó ningún código QR. Intente acercar o alejar el código QR.";
                     }
                 } catch (error) {
                     console.error("Error al procesar el video: ", error);
-                    debugElement.textContent = "Error al procesar el video. Intenta mover la cámara.";
+                    debugElement.textContent = "Error al procesar el video. Asegúrate de que la cámara esté enfocando bien el código.";
                 }
             } else {
                 debugElement.textContent = "Esperando datos del video...";
