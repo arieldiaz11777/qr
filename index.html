@@ -14,6 +14,7 @@
             padding: 0;
             height: 100vh;
             justify-content: center;
+            background-color: #f0f0f0;
         }
         video {
             width: 100%;
@@ -30,15 +31,20 @@
             color: gray;
         }
         #newScanButton {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #333;
-            color: #fff;
+            position: absolute;
+            bottom: 50px;
+            width: 60px;
+            height: 60px;
+            background-color: #4CAF50;
+            color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
             cursor: pointer;
-            display: none; /* El botón está oculto al principio */
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -47,20 +53,17 @@
     <video id="video" playsinline autoplay></video>
     <p id="result">Escanee un código QR</p>
     <p id="debug"></p>
-    <button id="newScanButton">Nuevo Escaneo</button> <!-- Botón para reactivar el escaneo -->
+    <button id="newScanButton">↺</button>
     <script src="./jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const resultElement = document.getElementById('result');
         const debugElement = document.getElementById('debug');
         const newScanButton = document.getElementById('newScanButton');
+        
+        let isScanning = true;
 
-        let isScanning = true; // Controla si el escaneo está activo o no
-
-        // Acceder a la cámara
-        navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-        })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
             video.srcObject = stream;
             video.setAttribute('playsinline', true);
@@ -81,38 +84,35 @@
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
                 
-                try {
-                    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                    const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
+                const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
-                    if (code) {
-                        resultElement.textContent = `Código QR detectado: ${code.data}`;
-                        debugElement.textContent = "Redirigiendo a la URL del código QR...";
+                if (code) {
+                    resultElement.textContent = `Código QR detectado`;
+                    debugElement.textContent = "Enviando datos en segundo plano...";
+                    
+                    // Enviar la URL sin redireccionar
+                    fetch(code.data)
+                        .then(() => {
+                            debugElement.textContent = "Datos enviados correctamente.";
+                        })
+                        .catch(error => {
+                            debugElement.textContent = "Error al enviar datos.";
+                            console.error("Error en el envío: ", error);
+                        });
 
-                        // Redirigir a la URL obtenida
-                        window.location.href = code.data;
-
-                        // Detener el escaneo y mostrar el botón
-                        isScanning = false;
-                        newScanButton.style.display = 'block'; // Mostrar el botón de nuevo escaneo
-                    } else {
-                        resultElement.textContent = 'Escanee un código QR';
-                        debugElement.textContent = "Asegúrese de que el código QR esté claro y bien iluminado.";
-                    }
-                } catch (error) {
-                    console.error("Error al procesar el video: ", error);
-                    debugElement.textContent = "Error al procesar el video. Intenta ajustar el enfoque.";
+                    isScanning = false;
+                    newScanButton.style.display = 'flex';
+                } else {
+                    resultElement.textContent = 'Escanee un código QR';
                 }
-            } else if (!isScanning) {
-                debugElement.textContent = "Escaneo pausado.";
-            }
+            } 
             requestAnimationFrame(tick);
         }
 
-        // Evento de clic en el botón para reactivar el escaneo
         newScanButton.addEventListener('click', () => {
             isScanning = true;
-            newScanButton.style.display = 'none'; // Ocultar el botón
+            newScanButton.style.display = 'none';
             resultElement.textContent = 'Escanee un código QR';
             debugElement.textContent = 'Escaneo reactivado. Alinee el QR en el área de la cámara.';
         });
