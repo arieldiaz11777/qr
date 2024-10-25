@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escáner de Código QR</title>
+    <title>Escáner de Código QR y Redirección</title>
     <style>
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            justify-content: center;
         }
         video {
             width: 100%;
             max-width: 600px;
-            border: 1px solid black;
+            border: 2px solid #333;
+            border-radius: 8px;
         }
         #result {
             margin-top: 20px;
@@ -31,8 +36,7 @@
     <video id="video" playsinline autoplay></video>
     <p id="result">Escanee un código QR</p>
     <p id="debug"></p>
-   <script src="./jsQR.js"></script>
-
+    <script src="./jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const resultElement = document.getElementById('result');
@@ -40,22 +44,18 @@
 
         // Acceder a la cámara
         navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'environment', 
-                width: { ideal: 640 }, 
-                height: { ideal: 480 } 
-            } 
+            video: { facingMode: 'environment' } 
         })
         .then(stream => {
             video.srcObject = stream;
-            video.setAttribute('playsinline', true); // Necesario para iOS
+            video.setAttribute('playsinline', true);
             video.play();
             requestAnimationFrame(tick);
-            debugElement.textContent = "Cámara accedida con éxito.";
+            debugElement.textContent = "Cámara accedida correctamente.";
         })
         .catch(err => {
             console.error("Error al acceder a la cámara: ", err);
-            debugElement.textContent = "Error al acceder a la cámara. Asegúrate de permitir el acceso a la cámara.";
+            debugElement.textContent = "Error al acceder a la cámara. Verifica los permisos.";
         });
 
         function tick() {
@@ -71,21 +71,23 @@
                     const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
                     if (code) {
-                        resultElement.textContent = `Código QR: ${code.data}`;
-                        debugElement.textContent = "Código QR detectado exitosamente.";
-                        console.log("Código QR leído: ", code.data);
+                        resultElement.textContent = `Código QR detectado: ${code.data}`;
+                        debugElement.textContent = "Redirigiendo a la URL del código QR...";
+
+                        // Redirigir a la URL obtenida
+                        window.location.href = code.data;
                     } else {
                         resultElement.textContent = 'Escanee un código QR';
-                        debugElement.textContent = "No se detectó ningún código QR. Intente acercar o alejar el código QR.";
+                        debugElement.textContent = "Asegúrese de que el código QR esté claro y bien iluminado.";
                     }
                 } catch (error) {
                     console.error("Error al procesar el video: ", error);
-                    debugElement.textContent = "Error al procesar el video. Asegúrate de que la cámara esté enfocando bien el código.";
+                    debugElement.textContent = "Error al procesar el video. Intenta ajustar el enfoque.";
                 }
             } else {
-                debugElement.textContent = "Esperando datos del video...";
+                debugElement.textContent = "Esperando datos de la cámara...";
             }
-            setTimeout(tick, 100); // Intervalo de escaneo
+            requestAnimationFrame(tick);
         }
     </script>
 </body>
