@@ -45,29 +45,31 @@
             box-sizing: border-box;
         }
 
+        /* Mensajes invisibles pero presentes en la página */
         #result, #debug {
             margin-top: 20px;
             font-weight: bold;
             text-align: center;
-        }
-        #debug {
-            color: #a0a0a0;
-            font-size: 14px;
+            color: transparent; /* Hace el texto invisible */
         }
 
+        /* Botón de nuevo escaneo en el centro del video */
         #newScanButton {
-            margin-top: 20px;
-            width: 140px;
-            height: 50px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 70px;
             background-color: #4CAF50;
             color: #ffffff;
             border: none;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
-            display: none;
+            display: none; /* Oculto al inicio */
         }
 
         #newScanButton:hover {
@@ -77,10 +79,12 @@
 </head>
 <body>
     <h1>Escáner de Código QR</h1>
-    <video id="video" playsinline autoplay></video>
+    <div style="position: relative; max-width: 340px;">
+        <video id="video" playsinline autoplay></video>
+        <button id="newScanButton">Nuevo Escaneo</button>
+    </div>
     <p id="result">Escanee un código QR</p>
     <p id="debug"></p>
-    <button id="newScanButton">Nuevo Escaneo</button>
 
     <script src="./jsQR.js"></script>
     <script>
