@@ -17,35 +17,38 @@
             background-color: #121212;
             color: #e0e0e0;
         }
-        
+
         h1 {
             color: #ffffff;
             margin-bottom: 20px;
         }
 
-        video {
-            width: 100%;
+        #videoContainer {
+            position: relative;
             max-width: 340px;
+            width: 100%;
             border: 10px solid rgba(255, 255, 255, 0.3);
             border-radius: 18px;
             box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
-            position: relative;
         }
-        
-        video::before,
-        video::after {
-            content: '';
+
+        #video {
+            width: 100%;
+            height: auto;
+            border-radius: inherit;
+        }
+
+        #countdown {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 60%;
-            height: 60%;
-            border: 2px dashed rgba(255, 255, 255, 0.6);
             transform: translate(-50%, -50%);
-            box-sizing: border-box;
+            font-size: 48px;
+            color: #ffffff;
+            font-weight: bold;
+            display: none; /* Oculto al inicio */
         }
 
-        /* Mensajes invisibles pero presentes en la página */
         #result, #debug {
             margin-top: 20px;
             font-weight: bold;
@@ -53,48 +56,51 @@
             color: transparent; /* Hace el texto invisible */
         }
 
-        /* Botón de nuevo escaneo en el centro del video */
-        #newScanButton {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200px;
-            height: 70px;
-            background-color: #4CAF50;
-            color: #ffffff;
-            border: none;
-            border-radius: 10px;
+        #scanMessage {
             font-size: 24px;
+            color: #ffffff;
             font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
             display: none; /* Oculto al inicio */
-        }
-
-        #newScanButton:hover {
-            background-color: #45a049;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <h1>Escáner de Código QR</h1>
-    <div style="position: relative; max-width: 340px;">
+    <div id="videoContainer">
         <video id="video" playsinline autoplay></video>
-        <button id="newScanButton">Nuevo Escaneo</button>
+        <div id="countdown">5</div> <!-- Posicionado absolutamente dentro del contenedor del video -->
     </div>
     <p id="result">Escanee un código QR</p>
     <p id="debug"></p>
+    <div id="scanMessage">Escanear siguiente código</div>
 
     <script src="./jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const resultElement = document.getElementById('result');
         const debugElement = document.getElementById('debug');
-        const newScanButton = document.getElementById('newScanButton');
-        
+        const countdownElement = document.getElementById('countdown');
+        const scanMessageElement = document.getElementById('scanMessage');
         let isScanning = true;
 
+        // Función para reproducir el sonido de "beep"
+        function playBeep() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sine'; // Tipo de onda
+            oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // Frecuencia en Hz
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); // Duración del beep
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Configurar la cámara para escaneo
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
             video.srcObject = stream;
@@ -115,11 +121,12 @@
                 canvasElement.height = video.videoHeight;
                 canvasElement.width = video.videoWidth;
                 canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                
+
                 const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
                 const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
                 if (code) {
+                    playBeep(); // Reproduce el sonido de "beep" cuando se detecta un código
                     resultElement.textContent = "Código QR detectado. Procesando...";
                     debugElement.textContent = "Enviando datos al servidor, espere un momento...";
 
@@ -133,7 +140,7 @@
                         });
 
                     isScanning = false;
-                    newScanButton.style.display = 'block';
+                    startCountdown();
                 } else {
                     resultElement.textContent = "Alinee el QR en el área de escaneo";
                 }
@@ -141,12 +148,32 @@
             requestAnimationFrame(tick);
         }
 
-        newScanButton.addEventListener('click', () => {
-            isScanning = true;
-            newScanButton.style.display = 'none';
-            resultElement.textContent = "Escanee un código QR";
-            debugElement.textContent = "Escaneo reiniciado. Alinee el código QR en el área de la cámara.";
-        });
+        function startCountdown() {
+            let countdown = 5;
+            countdownElement.textContent = countdown;
+            countdownElement.style.display = 'block';
+
+            const interval = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = countdown;
+
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    countdownElement.style.display = 'none';
+                    showScanMessage();
+                }
+            }, 1000);
+        }
+
+        function showScanMessage() {
+            scanMessageElement.style.display = 'block';
+            setTimeout(() => {
+                scanMessageElement.style.display = 'none';
+                isScanning = true; // Permite reiniciar el escaneo
+                resultElement.textContent = "Escanee un código QR";
+                debugElement.textContent = "Escaneo reiniciado. Alinee el código QR en el área de la cámara.";
+            }, 2000);
+        }
     </script>
 </body>
 </html>
