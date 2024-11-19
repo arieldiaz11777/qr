@@ -9,13 +9,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             height: 100vh;
-            justify-content: center;
             background-color: #121212;
             color: #e0e0e0;
+            overflow: hidden;
         }
 
         h1 {
@@ -30,6 +31,10 @@
             border: 10px solid rgba(255, 255, 255, 0.3);
             border-radius: 18px;
             box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
         #video {
@@ -40,63 +45,56 @@
 
         #countdown {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 48px;
+            font-size: 48px; /* Ajusta el tamaño del texto */
             color: #ffffff;
             font-weight: bold;
-            display: none; /* Oculto al inicio */
+            border: 5px solid #ffffff;
+            padding: 10px;
+            border-radius: 12px;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            text-align: center;
+            z-index: 10;
+            width: 80%;
         }
 
-        #result, #debug {
+        #result {
             margin-top: 20px;
             font-weight: bold;
             text-align: center;
-            color: transparent; /* Hace el texto invisible */
-        }
-
-        #scanMessage {
-            font-size: 24px;
-            color: #ffffff;
-            font-weight: bold;
-            display: none; /* Oculto al inicio */
-            margin-top: 20px;
+            color: #e0e0e0;
         }
     </style>
 </head>
 <body>
-    <h1>Bunker Qr</h1>
+    <h1>Bunker QR</h1>
     <div id="videoContainer">
         <video id="video" playsinline autoplay></video>
-        <div id="countdown">5</div> <!-- Posicionado absolutamente dentro del contenedor del video -->
+        <div id="countdown">5</div> <!-- Contenedor para la cuenta regresiva y el mensaje -->
     </div>
-    <p id="result">Escanee un código QR</p>
-    <p id="debug"></p>
-    <div id="scanMessage">Escanear siguiente código</div>
+    <p id="result">Alinee el código QR en el área de escaneo</p>
 
     <script src="./jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const resultElement = document.getElementById('result');
-        const debugElement = document.getElementById('debug');
         const countdownElement = document.getElementById('countdown');
-        const scanMessageElement = document.getElementById('scanMessage');
         let isScanning = true;
 
-        // Función para reproducir el sonido de "beep"
+        // Función para reproducir un sonido de "beep"
         function playBeep() {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
 
-            oscillator.type = 'sine'; // Tipo de onda
-            oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // Frecuencia en Hz
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime);
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); // Volumen ajustado
             oscillator.start();
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); // Duración del beep
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
@@ -107,11 +105,9 @@
             video.setAttribute('playsinline', true);
             video.play();
             requestAnimationFrame(tick);
-            debugElement.textContent = "Cámara activada. Alinee el código QR en el área de escaneo.";
         })
         .catch(err => {
             console.error("Error al acceder a la cámara: ", err);
-            debugElement.textContent = "Error al acceder a la cámara. Verifica los permisos.";
         });
 
         function tick() {
@@ -126,23 +122,21 @@
                 const code = jsQR(imageData.data, canvasElement.width, canvasElement.height);
 
                 if (code) {
-                    playBeep(); // Reproduce el sonido de "beep" cuando se detecta un código
+                    playBeep();
                     resultElement.textContent = "Código QR detectado. Procesando...";
-                    debugElement.textContent = "Enviando datos al servidor, espere un momento...";
 
                     fetch(code.data)
                         .then(() => {
-                            debugElement.textContent = "Datos enviados con éxito. Escaneo completo.";
                             resultElement.textContent = "Código escaneado correctamente.";
                         })
                         .catch(() => {
-                            debugElement.textContent = "Error al enviar datos. Intente nuevamente.";
+                            resultElement.textContent = "Error al enviar datos. Intente nuevamente.";
                         });
 
                     isScanning = false;
                     startCountdown();
                 } else {
-                    resultElement.textContent = "Alinee el QR en el área de escaneo";
+                    resultElement.textContent = "Alinee el código QR en el área de escaneo";
                 }
             } 
             requestAnimationFrame(tick);
@@ -159,20 +153,19 @@
 
                 if (countdown <= 0) {
                     clearInterval(interval);
-                    countdownElement.style.display = 'none';
-                    showScanMessage();
+                    displayScanMessage();
                 }
             }, 1000);
         }
 
-        function showScanMessage() {
-            scanMessageElement.style.display = 'block';
+        function displayScanMessage() {
+            countdownElement.textContent = "Escanea el siguiente código";
+            countdownElement.style.fontSize = '32px'; // Ajusta el tamaño del texto para el mensaje
             setTimeout(() => {
-                scanMessageElement.style.display = 'none';
-                isScanning = true; // Permite reiniciar el escaneo
-                resultElement.textContent = "Escanee un código QR";
-                debugElement.textContent = "Escaneo reiniciado. Alinee el código QR en el área de la cámara.";
-            }, 2000);
+                countdownElement.style.display = 'none';
+                isScanning = true;
+                resultElement.textContent = "Alinee el código QR en el área de escaneo";
+            }, 4000);
         }
     </script>
 </body>
